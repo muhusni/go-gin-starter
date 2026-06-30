@@ -11,20 +11,25 @@ func New(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 	userService := service.NewUserService(db)
 	userHandler := handler.NewUserHandler(userService)
-
+	authHandler := handler.NewAuthHandler()
 	r.GET("/favicon.ico", handler.FaviconHandler)
 	r.GET("/ping", handler.PingHandler)
 	r.GET("/health", handler.HealthHandler)
 
 	api := r.Group("/api/v1")
 
-	apiUser := api.Group("/users")
+	auth := api.Group("/auth")
 	{
-		apiUser.GET("", userHandler.GetUsers)
-		apiUser.POST("", userHandler.CreateUser)
-		apiUser.GET("/:id", userHandler.GetUser)
-		apiUser.PUT("/:id", userHandler.UpdateUser)
-		apiUser.DELETE("/:id", userHandler.DeleteUser)
+		auth.POST("/login", authHandler.Login)
+	}
+
+	user := api.Group("/users")
+	{
+		user.GET("", userHandler.GetUsers)
+		user.POST("", userHandler.CreateUser)
+		user.GET("/:id", userHandler.GetUser)
+		user.PUT("/:id", userHandler.UpdateUser)
+		user.DELETE("/:id", userHandler.DeleteUser)
 	}
 	return r
 }
