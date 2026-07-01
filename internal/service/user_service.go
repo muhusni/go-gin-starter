@@ -5,6 +5,7 @@ import (
 
 	"github.com/muhusni/go-gin-starter/internal/dto"
 	"github.com/muhusni/go-gin-starter/internal/model"
+	"github.com/muhusni/go-gin-starter/internal/security"
 	"gorm.io/gorm"
 )
 
@@ -49,10 +50,15 @@ func (s *UserService) CreateUser(req dto.CreateUserRequest) (dto.UserResponse, e
 		return dto.UserResponse{}, ErrPasswordMismatch
 	}
 
+	passwordHash, err := security.HashPassword(req.Password)
+	if err != nil {
+		return dto.UserResponse{}, err
+	}
+
 	user := model.User{
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: req.Password,
+		Password: passwordHash,
 		IsAdmin:  false,
 	}
 
@@ -122,7 +128,11 @@ func applyUserUpdate(user *model.User, req *dto.UpdateUserRequest) error {
 		if req.PasswordConfirm == nil || *req.Password != *req.PasswordConfirm {
 			return ErrPasswordMismatch
 		}
-		user.Password = *req.Password
+		passwordHash, err := security.HashPassword(*req.Password)
+		if err != nil {
+			return err
+		}
+		user.Password = passwordHash
 	}
 	return nil
 }
