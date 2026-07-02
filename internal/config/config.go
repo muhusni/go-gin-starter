@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Port     string
 	Database DatabaseConfig
+	JWT JWTConfig	
 }
 
 type DatabaseConfig struct {
@@ -18,6 +19,11 @@ type DatabaseConfig struct {
 	Password string
 	Name     string
 	SSLMode  string
+}
+
+type JWTConfig struct {
+	Secret string
+	Issuer string
 }
 
 func Load() (Config, error) {
@@ -41,6 +47,10 @@ func Load() (Config, error) {
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
 			Name:     os.Getenv("DB_NAME"),
+		},
+		JWT: JWTConfig{
+			Secret: os.Getenv("JWT_SECRET"),
+			Issuer: os.Getenv("JWT_ISSUER"),
 		},
 	}, nil
 }

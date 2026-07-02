@@ -15,6 +15,6 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	r := router.New(db)
+	r := router.New(db, &cfg)
 	return r.Run(":" + cfg.Port)
 }

@@ -5,8 +5,8 @@ import (
 
 	"github.com/muhusni/go-gin-starter/internal/dto"
 	"github.com/muhusni/go-gin-starter/internal/model"
+	"github.com/muhusni/go-gin-starter/internal/repository"
 	"github.com/muhusni/go-gin-starter/internal/security"
-	"gorm.io/gorm"
 )
 
 var ErrPasswordMismatch = errors.New("password confirm does not match")
@@ -14,34 +14,32 @@ var ErrNameRequired = errors.New("name cannot be blank")
 var ErrPasswordRequired = errors.New("password cannot be blank")
 
 type UserService struct {
-	DB *gorm.DB
+	userRepo *repository.UserRepository
 }
 
-func NewUserService(db *gorm.DB) *UserService {
-	return &UserService{DB: db}
+func NewUserService(userRepository *repository.UserRepository) *UserService {
+	return &UserService{userRepo: userRepository}
 }
 
 func (s *UserService) GetUsers() ([]dto.UserResponse, error) {
-	var users []model.User
-
-	if err := s.DB.Find(&users).Error; err != nil {
+	users, err := s.userRepo.FindAll()
+	if err != nil {
 		return nil, err
 	}
 
 	responses := make([]dto.UserResponse, 0, len(users))
 	for _, user := range users {
-		responses = append(responses, ToUserResponse(user))
+		responses = append(responses, ToUserResponse(&user))
 	}
 
 	return responses, nil
 }
 
 func (s *UserService) GetUser(id uint64) (dto.UserResponse, error) {
-	var user model.User
-	if err := s.DB.First(&user, id).Error; err != nil {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
 		return dto.UserResponse{}, err
 	}
-
 	return ToUserResponse(user), nil
 }
 
@@ -62,43 +60,34 @@ func (s *UserService) CreateUser(req dto.CreateUserRequest) (dto.UserResponse, e
 		IsAdmin:  false,
 	}
 
-	if err := s.DB.Create(&user).Error; err != nil {
+	if err := s.userRepo.Create(&user); err != nil {
 		return dto.UserResponse{}, err
 	}
 
-	return ToUserResponse(user), nil
+	return ToUserResponse(&user), nil
 }
 
 func (s *UserService) UpdateUser(id uint64, req dto.UpdateUserRequest) (dto.UserResponse, error) {
 
-	var user model.User
-	if err := s.DB.First(&user, id).Error; err != nil {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
 		return dto.UserResponse{}, err
 	}
 
-	if err := applyUserUpdate(&user, &req); err != nil {
+	if err := applyUserUpdate(user, &req); err != nil {
 		return dto.UserResponse{}, err
 	}
 
-	if err := s.DB.Save(&user).Error; err != nil {
+	if err := s.userRepo.Update(user); err != nil {
 		return dto.UserResponse{}, err
 	}
 
 	return ToUserResponse(user), nil
 }
 func (s *UserService) DeleteUser(id uint64) error {
-	var user model.User
-	if err := s.DB.First(&user, id).Error; err != nil {
-		return err
-	}
-
-	if err := s.DB.Delete(&user).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return s.userRepo.Delete(id)
 }
-func ToUserResponse(user model.User) dto.UserResponse {
+func ToUserResponse(user *model.User) dto.UserResponse {
 	return dto.UserResponse{
 		ID:        user.ID,
 		Name:      user.Name,

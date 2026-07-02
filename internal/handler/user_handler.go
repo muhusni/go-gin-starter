@@ -12,15 +12,15 @@ import (
 )
 
 type UserHandler struct {
-	UserService *service.UserService
+	userService *service.UserService
 }
 
 func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{UserService: userService}
+	return &UserHandler{userService: userService}
 }
 
 func (h *UserHandler) GetUsers(c *gin.Context) {
-	users, err := h.UserService.GetUsers()
+	users, err := h.userService.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Internal server error",
@@ -44,7 +44,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.UserService.GetUser(id)
+	user, err := h.userService.GetUser(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
@@ -69,7 +69,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.UserService.CreateUser(req)
+	user, err := h.userService.CreateUser(req)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrPasswordMismatch):
@@ -107,7 +107,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.UserService.UpdateUser(id, req)
+	user, err := h.userService.UpdateUser(id, req)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrPasswordMismatch):
@@ -140,7 +140,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.UserService.DeleteUser(id); err != nil {
+	if err := h.userService.DeleteUser(id); err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
